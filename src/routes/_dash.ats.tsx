@@ -13,12 +13,7 @@ import { PageHeader } from "@/components/ui-ext/page-header";
 import { GlassCard } from "@/components/ui-ext/glass-card";
 import { ScoreGauge } from "@/components/ui-ext/score-gauge";
 import { Reveal } from "@/components/ui-ext/reveal";
-import { useAnalysis } from "@/context/AnalysisContext";
-import {
-  atsCompliant as defaultAtsCompliant,
-  skillsMissing as defaultSkillsMissing,
-  keywordDensity as defaultKeywordDensity,
-} from "@/lib/career-data";
+import { atsIssues, atsCompliant, skillsMissing, keywordDensity } from "@/lib/career-data";
 
 export const Route = createFileRoute("/_dash/ats")({
   head: () => ({ meta: [{ title: "ATS Analyzer — CareerPilot AI" }] }),
@@ -26,14 +21,6 @@ export const Route = createFileRoute("/_dash/ats")({
 });
 
 function AtsPage() {
-  const { analysis } = useAnalysis();
-
-  const atsIssues = analysis?.atsIssues || [];
-  const atsCompliant = analysis?.atsCompliant || defaultAtsCompliant;
-  const skillsMissing = analysis?.skillsMissing || defaultSkillsMissing;
-  const keywordDensity = analysis?.keywordDensity || defaultKeywordDensity;
-  const atsScore = analysis?.scores.ats || 76;
-
   return (
     <>
       <PageHeader
@@ -46,12 +33,10 @@ function AtsPage() {
           <div>
             <h3 className="font-semibold">ATS Compatibility Score</h3>
             <p className="mt-1 max-w-md text-sm text-muted-foreground">
-              {analysis
-                ? `Your resume scored ${atsScore}% compatibility. ${atsScore >= 80 ? "Great job!" : "Fix the flagged formatting issues to improve."}`
-                : "Upload your resume to see ATS analysis."}
+              Your resume is mostly parser-friendly. Fix the flagged formatting issues to clear 90%.
             </p>
           </div>
-          <ScoreGauge value={atsScore} size={170} title="Compatible" />
+          <ScoreGauge value={76} size={170} title="Compatible" />
         </GlassCard>
       </Reveal>
 

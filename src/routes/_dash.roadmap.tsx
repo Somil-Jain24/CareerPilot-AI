@@ -1,11 +1,9 @@
-import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { BookOpen, Target, FolderGit2, Check } from "lucide-react";
+import { BookOpen, Target, FolderGit2, CheckCircle2 } from "lucide-react";
 import { PageHeader } from "@/components/ui-ext/page-header";
 import { GlassCard } from "@/components/ui-ext/glass-card";
-import { useAnalysis } from "@/context/AnalysisContext";
-import { roadmap as defaultRoadmap } from "@/lib/career-data";
+import { roadmap } from "@/lib/career-data";
 
 export const Route = createFileRoute("/_dash/roadmap")({
   head: () => ({ meta: [{ title: "Skill Gap Roadmap — CareerPilot AI" }] }),
@@ -13,21 +11,6 @@ export const Route = createFileRoute("/_dash/roadmap")({
 });
 
 function RoadmapPage() {
-  const { analysis, updateRoadmapProgress } = useAnalysis();
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(() => {
-    const saved = localStorage.getItem("roadmapProgress");
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  const roadmap = analysis?.roadmapTopics || defaultRoadmap;
-
-  const toggleItem = (week: string, item: string) => {
-    const key = `${week}-${item}`;
-    const newState = !checkedItems[key];
-    setCheckedItems((prev) => ({ ...prev, [key]: newState }));
-    updateRoadmapProgress(week, item, newState);
-  };
-
   return (
     <>
       <PageHeader
@@ -64,9 +47,9 @@ function RoadmapPage() {
                   )}
                 </div>
                 <div className="mt-4 grid gap-4 md:grid-cols-3">
-                  <Block icon={BookOpen} title="Topics" items={w.topics} week={w.week} accent="text-primary" onToggle={toggleItem} checkedItems={checkedItems} />
-                  <Block icon={Target} title="Learning Goals" items={w.goals} week={w.week} accent="text-secondary" onToggle={toggleItem} checkedItems={checkedItems} />
-                  <Block icon={FolderGit2} title="Projects" items={w.projects} week={w.week} accent="text-success" onToggle={toggleItem} checkedItems={checkedItems} />
+                  <Block icon={BookOpen} title="Topics" items={w.topics} accent="text-primary" />
+                  <Block icon={Target} title="Learning Goals" items={w.goals} accent="text-secondary" />
+                  <Block icon={FolderGit2} title="Projects" items={w.projects} accent="text-success" />
                 </div>
               </GlassCard>
             </motion.div>
@@ -81,18 +64,12 @@ function Block({
   icon: Icon,
   title,
   items,
-  week,
   accent,
-  onToggle,
-  checkedItems,
 }: {
   icon: typeof BookOpen;
   title: string;
   items: string[];
-  week: string;
   accent: string;
-  onToggle: (week: string, item: string) => void;
-  checkedItems: Record<string, boolean>;
 }) {
   return (
     <div className="rounded-xl bg-muted/25 p-4">
@@ -100,27 +77,12 @@ function Block({
         <Icon className="h-4 w-4" /> {title}
       </div>
       <ul className="space-y-1.5">
-        {items.map((it) => {
-          const key = `${week}-${it}`;
-          const isChecked = checkedItems[key];
-          return (
-            <li key={it} className="flex items-start gap-2 text-sm">
-              <button
-                onClick={() => onToggle(week, it)}
-                className={`mt-0.5 h-3.5 w-3.5 shrink-0 rounded-sm border transition-all ${
-                  isChecked
-                    ? "border-success bg-success text-success-foreground"
-                    : "border-muted-foreground/60 text-transparent"
-                }`}
-              >
-                {isChecked && <Check className="h-3.5 w-3.5" />}
-              </button>
-              <span className={isChecked ? "line-through text-muted-foreground/60" : "text-muted-foreground"}>
-                {it}
-              </span>
-            </li>
-          );
-        })}
+        {items.map((it) => (
+          <li key={it} className="flex items-start gap-2 text-sm text-muted-foreground">
+            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+            {it}
+          </li>
+        ))}
       </ul>
     </div>
   );

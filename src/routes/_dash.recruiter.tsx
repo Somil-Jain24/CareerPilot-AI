@@ -4,8 +4,7 @@ import { PageHeader } from "@/components/ui-ext/page-header";
 import { GlassCard } from "@/components/ui-ext/glass-card";
 import { ScoreGauge } from "@/components/ui-ext/score-gauge";
 import { Reveal } from "@/components/ui-ext/reveal";
-import { useAnalysis } from "@/context/AnalysisContext";
-import { recruiterStrengths as defaultStrengths, recruiterWeaknesses as defaultWeaknesses } from "@/lib/career-data";
+import { computeCRI, recruiterStrengths, recruiterWeaknesses } from "@/lib/career-data";
 
 export const Route = createFileRoute("/_dash/recruiter")({
   head: () => ({ meta: [{ title: "Recruiter View — CareerPilot AI" }] }),
@@ -13,22 +12,10 @@ export const Route = createFileRoute("/_dash/recruiter")({
 });
 
 function RecruiterPage() {
-  const { analysis } = useAnalysis();
-
-  const computeCRI = (scores = analysis?.scores) => {
-    if (!scores) return 76;
-    return Math.round(
-      0.3 * scores.ats + 0.25 * scores.resume + 0.25 * scores.interview + 0.2 * scores.skill
-    );
-  };
-
   const cri = computeCRI();
   const fit = cri >= 71 ? "Strong Fit" : cri >= 41 ? "Moderate Fit" : "Weak Fit";
   const fitClass =
     cri >= 71 ? "bg-success/15 text-success" : cri >= 41 ? "bg-warning/15 text-warning" : "bg-destructive/15 text-destructive";
-
-  const recruiterStrengths = analysis?.recruiterStrengths || defaultStrengths;
-  const recruiterWeaknesses = analysis?.recruiterWeaknesses || defaultWeaknesses;
 
   return (
     <>
@@ -102,9 +89,8 @@ function RecruiterPage() {
             {fit}
           </span>
           <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-            {analysis
-              ? `Score: ${cri}/100. ${recruiterWeaknesses.length > 0 ? "Address: " + recruiterWeaknesses[0] + "." : "Strong candidate!"}`
-              : "Upload your resume to see recruiter insights."}
+            Solid technical foundation and strong projects. Adding cloud certifications and
+            senior-level experience would push this to a clear hire.
           </p>
         </GlassCard>
       </Reveal>

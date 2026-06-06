@@ -79,9 +79,13 @@ export function AppSidebar({
           <p className="mt-1 text-xs text-muted-foreground">
             Unlimited analyses & AI coaching.
           </p>
-          <button className="mt-3 w-full rounded-lg bg-gradient-primary px-3 py-2 text-xs font-semibold text-primary-foreground glow-ring">
+          <Link
+            to="/pricing"
+            onClick={onClose}
+            className="mt-3 block w-full text-center rounded-lg bg-gradient-primary px-3 py-2 text-xs font-semibold text-primary-foreground glow-ring hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
             Go Pro
-          </button>
+          </Link>
         </div>
       </aside>
     </>

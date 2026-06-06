@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, Search, Bell, Sun, Moon } from "lucide-react";
+import { Menu, Search, Bell, Sun, Moon, Monitor } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import {
   DropdownMenu,
@@ -18,7 +18,7 @@ const notifications = [
 ];
 
 export function TopNavbar({ onMenu }: { onMenu: () => void }) {
-  const { theme, toggle } = useTheme();
+  const { themeMode, setTheme } = useTheme();
   const [unread] = useState(notifications.length);
 
   return (
@@ -39,13 +39,29 @@ export function TopNavbar({ onMenu }: { onMenu: () => void }) {
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <button
-          onClick={toggle}
-          className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Select theme"
+            >
+              {themeMode === "light" && <Sun className="h-5 w-5 text-warning" />}
+              {themeMode === "dark" && <Moon className="h-5 w-5 text-primary" />}
+              {themeMode === "system" && <Monitor className="h-5 w-5 text-slate-400" />}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-32 glass-strong">
+            <DropdownMenuItem onClick={() => setTheme("light")} className="flex items-center gap-2">
+              <Sun className="h-4 w-4 text-warning" /> Light
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("dark")} className="flex items-center gap-2">
+              <Moon className="h-4 w-4 text-primary" /> Dark
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("system")} className="flex items-center gap-2">
+              <Monitor className="h-4 w-4 text-slate-400" /> System
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
