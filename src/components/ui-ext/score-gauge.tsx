@@ -1,7 +1,19 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { CountUp } from "./count-up";
-import { scoreColor, scoreLabel } from "@/lib/career-data";
+export const scoreColor = (score: number) => {
+  if (score >= 85) return "var(--color-success)";
+  if (score >= 70) return "var(--color-primary)";
+  if (score >= 50) return "var(--color-warning)";
+  return "var(--color-destructive)";
+};
+
+export const scoreLabel = (score: number) => {
+  if (score >= 85) return "Excellent";
+  if (score >= 70) return "Good";
+  if (score >= 50) return "Fair";
+  return "Needs Work";
+};
 
 interface ScoreGaugeProps {
   value: number;

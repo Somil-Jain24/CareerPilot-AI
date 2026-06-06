@@ -14,21 +14,30 @@ import {
   Sparkles,
   TrendingUp,
   Star,
-  Sun,
-  Moon,
-  Monitor,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui-ext/glass-card";
 import { CountUp } from "@/components/ui-ext/count-up";
 import { Reveal } from "@/components/ui-ext/reveal";
-import { testimonials } from "@/lib/career-data";
-import { useTheme } from "@/hooks/use-theme";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+const testimonials = [
+  {
+    quote: "The ATS checker caught formatting issues I didn't even know existed. Got 3 interviews my first week using it.",
+    name: "Alex Rivera",
+    role: "Frontend Developer",
+    initials: "AR",
+  },
+  {
+    quote: "CareerPilot’s interview practice is scary good. The feedback on my scenario answers completely changed my approach.",
+    name: "Samantha Chen",
+    role: "Product Manager",
+    initials: "SC",
+  },
+  {
+    quote: "Finally, a roadmap that tells me exactly what to study to bridge the gap between my current skills and the JD.",
+    name: "Marcus Johnson",
+    role: "Data Analyst",
+    initials: "MJ",
+  },
+];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -68,10 +77,19 @@ const accentBg: Record<string, string> = {
 };
 
 function Landing() {
-  const { themeMode, setTheme } = useTheme();
-
   return (
     <div className="relative min-h-screen overflow-hidden">
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-x-0 top-0 -z-20 h-screen w-full object-cover opacity-80 pointer-events-none"
+      >
+        <source src="/video.mp4" type="video/mp4" />
+      </video>
+
       {/* nav */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/60 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-8">
@@ -90,30 +108,6 @@ function Landing() {
           </nav>
           
           <div className="flex items-center gap-3.5">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="rounded-xl border border-border bg-muted/20 p-2.5 text-muted-foreground transition-all hover:bg-accent hover:text-foreground shadow-sm flex items-center justify-center"
-                  aria-label="Select theme"
-                >
-                  {themeMode === "light" && <Sun className="h-5 w-5 text-warning animate-spin-slow" />}
-                  {themeMode === "dark" && <Moon className="h-5 w-5 text-primary" />}
-                  {themeMode === "system" && <Monitor className="h-5 w-5 text-slate-400" />}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-32 glass-strong">
-                <DropdownMenuItem onClick={() => setTheme("light")} className="flex items-center gap-2">
-                  <Sun className="h-4 w-4 text-warning" /> Light
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")} className="flex items-center gap-2">
-                  <Moon className="h-4 w-4 text-primary" /> Dark
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")} className="flex items-center gap-2">
-                  <Monitor className="h-4 w-4 text-slate-400" /> System
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             <Link
               to="/dashboard"
               className="rounded-xl bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground glow-ring transition-transform hover:scale-[1.03]"
@@ -125,8 +119,7 @@ function Landing() {
       </header>
 
       {/* hero */}
-      <section className="relative">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-hero-glow" />
+      <section className="relative z-10">
         <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 lg:px-8 lg:pt-24">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>

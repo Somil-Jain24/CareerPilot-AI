@@ -31,3 +31,9 @@ dist-ssr
 *.sln
 *.sw?
 .vite/
+
+# Env files
+.env
+
+# Local Netlify folder
+.netlify
