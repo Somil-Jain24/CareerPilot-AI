@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   LineChart,
@@ -17,7 +18,8 @@ import { GlassCard } from "@/components/ui-ext/glass-card";
 import { ScoreGauge } from "@/components/ui-ext/score-gauge";
 import { ProgressBar } from "@/components/ui-ext/progress-bar";
 import { Reveal } from "@/components/ui-ext/reveal";
-import { scores, computeCRI, criHistory, scoreLabel } from "@/lib/career-data";
+import { useAnalysis } from "@/context/AnalysisContext";
+import { scores as defaultScores, computeCRI as defaultComputeCRI, criHistory, scoreLabel } from "@/lib/career-data";
 
 export const Route = createFileRoute("/_dash/dashboard")({
   head: () => ({ meta: [{ title: "Employability Dashboard — CareerPilot AI" }] }),
@@ -25,7 +27,25 @@ export const Route = createFileRoute("/_dash/dashboard")({
 });
 
 function Dashboard() {
+  const { analysis } = useAnalysis();
+
+  const computeCRI = (s = analysis?.scores || defaultScores) => {
+    return Math.round(
+      0.3 * s.ats + 0.25 * s.resume + 0.25 * s.interview + 0.2 * s.skill,
+    );
+  };
+
   const cri = computeCRI();
+  const scores = analysis?.scores || defaultScores;
+
+  const roadmapCompletion = useMemo(() => {
+    const saved = localStorage.getItem("roadmapProgress");
+    if (!saved) return 0;
+    const items = JSON.parse(saved);
+    const completed = Object.values(items).filter(Boolean).length;
+    const total = Object.keys(items).length || 1;
+    return Math.round((completed / total) * 100);
+  }, []);
 
   return (
     <>
@@ -126,9 +146,9 @@ function Dashboard() {
         <GlassCard hover={false}>
           <h3 className="mb-5 font-semibold">Activity & Coverage</h3>
           <div className="grid gap-6 md:grid-cols-3">
-            <ProgressBar label="Roadmap Completion" value={45} color="var(--color-primary)" />
-            <ProgressBar label="Interview Practice Sessions" value={62} color="var(--color-secondary)" delay={0.1} />
-            <ProgressBar label="Skill Coverage" value={68} color="var(--color-success)" delay={0.2} />
+            <ProgressBar label="Roadmap Completion" value={roadmapCompletion} color="var(--color-primary)" />
+            <ProgressBar label="Skill Coverage" value={scores.skill} color="var(--color-secondary)" delay={0.1} />
+            <ProgressBar label="ATS Optimization" value={scores.ats} color="var(--color-success)" delay={0.2} />
           </div>
         </GlassCard>
       </Reveal>

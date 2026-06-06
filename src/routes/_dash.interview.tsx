@@ -28,6 +28,69 @@ export const Route = createFileRoute("/_dash/interview")({
 type Mode = keyof typeof interviewQuestions;
 type Msg = { role: "ai" | "user"; text: string };
 
+interface ScoreResult {
+  accuracy: number;
+  confidence: number;
+  communication: number;
+  completeness: number;
+}
+
+function evaluateAnswer(answer: string, mode: Mode): ScoreResult {
+  const baseScore = 60;
+  const length = answer.length;
+
+  let completeness = baseScore;
+  let accuracy = baseScore;
+  let communication = baseScore;
+  let confidence = baseScore;
+
+  // Length evaluation
+  if (length > 100) completeness += 20;
+  else if (length > 50) completeness += 10;
+  else if (length < 20) completeness -= 20;
+
+  // Structure evaluation (STAR method, examples)
+  const hasExamples = /example|instance|such as|for instance/.test(answer.toLowerCase());
+  const hasMeasurableImpact = /\d+%|improved|increased|reduced|saved/.test(answer);
+  const hasAction = /implemented|created|designed|built|developed/.test(answer.toLowerCase());
+
+  if (hasExamples) accuracy += 15;
+  if (hasMeasurableImpact) {
+    accuracy += 10;
+    confidence += 10;
+  }
+  if (hasAction) {
+    accuracy += 10;
+    completeness += 10;
+  }
+
+  // Mode-specific evaluation
+  if (mode === "Technical") {
+    const techKeywords = ["algorithm", "architecture", "performance", "optimization", "database"];
+    const matchedKeywords = techKeywords.filter((kw) => answer.toLowerCase().includes(kw)).length;
+    accuracy += matchedKeywords * 5;
+  } else if (mode === "HR") {
+    const softKeywords = ["team", "collaboration", "learn", "growth", "feedback"];
+    const matchedKeywords = softKeywords.filter((kw) => answer.toLowerCase().includes(kw)).length;
+    communication += matchedKeywords * 5;
+  } else if (mode === "Scenario") {
+    const actionKeywords = ["steps", "process", "approach", "strategy", "solution"];
+    const matchedKeywords = actionKeywords.filter((kw) => answer.toLowerCase().includes(kw)).length;
+    confidence += matchedKeywords * 5;
+  }
+
+  // Communication cues
+  if (answer.includes(",") || answer.includes(".")) communication += 10;
+  if (answer.match(/\b\w+ing\b/g)) confidence += 5;
+
+  return {
+    accuracy: Math.min(100, accuracy),
+    confidence: Math.min(100, confidence),
+    communication: Math.min(100, communication),
+    completeness: Math.min(100, completeness),
+  };
+}
+
 function InterviewPage() {
   const [mode, setMode] = useState<Mode>("Technical");
   const [qIndex, setQIndex] = useState(0);
@@ -37,6 +100,13 @@ function InterviewPage() {
   const [input, setInput] = useState("");
   const [evaluated, setEvaluated] = useState(false);
   const [typing, setTyping] = useState(false);
+  const [scores, setScores] = useState<ScoreResult>({
+    accuracy: 0,
+    confidence: 0,
+    communication: 0,
+    completeness: 0,
+  });
+  const [feedback, setFeedback] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,7 +117,28 @@ function InterviewPage() {
     setMode(m);
     setQIndex(0);
     setEvaluated(false);
+    setScores({ accuracy: 0, confidence: 0, communication: 0, completeness: 0 });
     setMessages([{ role: "ai", text: interviewQuestions[m][0] }]);
+  };
+
+  const generateFeedback = (answer: string, scores: ScoreResult): string => {
+    if (scores.completeness < 50) {
+      return "Good start, but try using the STAR method (Situation, Task, Action, Result) to elaborate on your actions.";
+    }
+    if (scores.accuracy < 60) {
+      return "Consider adding more specific examples and measurable outcomes to strengthen your answer.";
+    }
+    if (scores.communication < 60) {
+      return "Great content! Next time, focus on clear structure and better organization of your thoughts.";
+    }
+    const avgScore = (scores.accuracy + scores.completeness + scores.confidence + scores.communication) / 4;
+    if (avgScore >= 80) {
+      return "Excellent answer! You demonstrated strong knowledge and clear communication. Ready for the next challenge.";
+    }
+    if (avgScore >= 70) {
+      return "Good answer with solid examples. Add more quantifiable impact details to make it even stronger.";
+    }
+    return "Solid effort. Focus on providing specific examples and tying your experience back to the role requirements.";
   };
 
   const send = () => {
@@ -57,7 +148,13 @@ function InterviewPage() {
     setInput("");
     setTyping(true);
     setEvaluated(false);
+
     setTimeout(() => {
+      const evaluatedScores = evaluateAnswer(answer, mode);
+      setScores(evaluatedScores);
+      const feedbackText = generateFeedback(answer, evaluatedScores);
+      setFeedback(feedbackText);
+
       const next = (qIndex + 1) % interviewQuestions[mode].length;
       setTyping(false);
       setEvaluated(true);
@@ -166,17 +263,40 @@ function InterviewPage() {
           <GlassCard hover={false} className="h-full">
             <h3 className="mb-4 font-semibold">Answer Scorecard</h3>
             <div className="mb-4 grid grid-cols-2 gap-3">
-              {interviewAttributes.map((a) => (
-                <div key={a.attribute} className="rounded-xl bg-muted/30 p-3 text-center">
-                  <p className="text-xs text-muted-foreground">{a.attribute}</p>
-                  <p className="font-display text-xl font-bold text-primary">
-                    {evaluated ? a.value : "—"}
-                  </p>
-                </div>
-              ))}
+              <div className="rounded-xl bg-muted/30 p-3 text-center">
+                <p className="text-xs text-muted-foreground">Accuracy</p>
+                <p className="font-display text-xl font-bold text-primary">
+                  {evaluated ? scores.accuracy : "—"}
+                </p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3 text-center">
+                <p className="text-xs text-muted-foreground">Confidence</p>
+                <p className="font-display text-xl font-bold text-secondary">
+                  {evaluated ? scores.confidence : "—"}
+                </p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3 text-center">
+                <p className="text-xs text-muted-foreground">Communication</p>
+                <p className="font-display text-xl font-bold text-warning">
+                  {evaluated ? scores.communication : "—"}
+                </p>
+              </div>
+              <div className="rounded-xl bg-muted/30 p-3 text-center">
+                <p className="text-xs text-muted-foreground">Completeness</p>
+                <p className="font-display text-xl font-bold text-success">
+                  {evaluated ? scores.completeness : "—"}
+                </p>
+              </div>
             </div>
             <ResponsiveContainer width="100%" height={200}>
-              <RadarChart data={interviewAttributes}>
+              <RadarChart
+                data={[
+                  { attribute: "Accuracy", value: evaluated ? scores.accuracy : 0 },
+                  { attribute: "Confidence", value: evaluated ? scores.confidence : 0 },
+                  { attribute: "Communication", value: evaluated ? scores.communication : 0 },
+                  { attribute: "Completeness", value: evaluated ? scores.completeness : 0 },
+                ]}
+              >
                 <PolarGrid stroke="var(--color-border)" />
                 <PolarAngleAxis dataKey="attribute" tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }} />
                 <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
@@ -208,9 +328,9 @@ function InterviewPage() {
           </GlassCard>
           <GlassCard hover={false} glow="success">
             <h3 className="mb-2 flex items-center gap-2 font-semibold">
-              <Sparkles className="h-4 w-4 text-success" /> Ideal Industry Answer
+              <Sparkles className="h-4 w-4 text-success" /> AI Feedback
             </h3>
-            <p className="text-sm text-muted-foreground">{idealAnswers.default}</p>
+            <p className="text-sm text-muted-foreground">{feedback || idealAnswers.default}</p>
           </GlassCard>
         </motion.div>
       )}
