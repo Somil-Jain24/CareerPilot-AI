@@ -5,7 +5,13 @@ import { GlassCard } from "@/components/ui-ext/glass-card";
 import { ScoreGauge } from "@/components/ui-ext/score-gauge";
 import { ProgressBar } from "@/components/ui-ext/progress-bar";
 import { Reveal } from "@/components/ui-ext/reveal";
-import { matchBreakdown, skillsFound, skillsMissing, keywordGaps } from "@/lib/career-data";
+import { useAnalysis } from "@/context/AnalysisContext";
+import {
+  matchBreakdown as defaultMatchBreakdown,
+  skillsFound as defaultSkillsFound,
+  skillsMissing as defaultSkillsMissing,
+  keywordGaps as defaultKeywordGaps,
+} from "@/lib/career-data";
 
 export const Route = createFileRoute("/_dash/match")({
   head: () => ({ meta: [{ title: "Match Analysis — CareerPilot AI" }] }),
@@ -13,6 +19,17 @@ export const Route = createFileRoute("/_dash/match")({
 });
 
 function MatchPage() {
+  const { analysis } = useAnalysis();
+
+  const matchBreakdown = analysis?.matchBreakdown || defaultMatchBreakdown;
+  const skillsFound = analysis?.skillsFound || defaultSkillsFound;
+  const skillsMissing = analysis?.skillsMissing || defaultSkillsMissing;
+  const keywordGaps = analysis?.missingKeywords || defaultKeywordGaps;
+
+  const overallScore = analysis
+    ? Math.round((skillsFound.length / (skillsFound.length + skillsMissing.length)) * 100)
+    : 78;
+
   return (
     <>
       <PageHeader
@@ -27,9 +44,11 @@ function MatchPage() {
               Overall Match
             </h3>
             <div className="my-4">
-              <ScoreGauge value={78} size={210} title="Good Fit" />
+              <ScoreGauge value={overallScore} size={210} title={overallScore >= 80 ? "Great Fit" : overallScore >= 60 ? "Good Fit" : "Needs Work"} />
             </div>
-            <p className="text-sm text-muted-foreground">Strong alignment — close a few gaps to reach 90+.</p>
+            <p className="text-sm text-muted-foreground">
+              {analysis ? `You match ${skillsFound.length}/${skillsFound.length + skillsMissing.length} required skills.` : "Upload your resume to see match analysis."}
+            </p>
           </GlassCard>
         </Reveal>
 

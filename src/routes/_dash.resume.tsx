@@ -26,7 +26,7 @@ import { MetricCard } from "@/components/ui-ext/metric-card";
 import { ProgressBar } from "@/components/ui-ext/progress-bar";
 import { Reveal } from "@/components/ui-ext/reveal";
 import { Skeleton } from "@/components/ui/skeleton";
-import { scores, computeCRI } from "@/lib/career-data";
+import { useAnalysis } from "@/context/AnalysisContext";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_dash/resume")({
@@ -34,36 +34,50 @@ export const Route = createFileRoute("/_dash/resume")({
   component: ResumePage,
 });
 
-const distribution = [
-  { area: "Impact", value: 80, color: "var(--color-primary)" },
-  { area: "Clarity", value: 88, color: "var(--color-secondary)" },
-  { area: "Skills", value: 68, color: "var(--color-warning)" },
-  { area: "Format", value: 76, color: "var(--color-success)" },
-  { area: "Keywords", value: 64, color: "var(--color-destructive)" },
-];
-
 function ResumePage() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [jd, setJd] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "done">("idle");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+
+  const { analysis, updateAnalysis } = useAnalysis();
 
   const onFile = (f?: File) => {
     if (!f) return;
+    setResumeFile(f);
     setFileName(f.name);
     toast.success(`Uploaded ${f.name}`);
   };
 
-  const analyze = () => {
-    if (!fileName) {
+  const analyze = async () => {
+    if (!resumeFile) {
       toast.error("Upload a resume first");
       return;
     }
+    if (!jd.trim()) {
+      toast.error("Paste a job description first");
+      return;
+    }
     setState("loading");
-    setTimeout(() => {
+    try {
+      await updateAnalysis(resumeFile, jd);
       setState("done");
       toast.success("Analysis complete");
-    }, 1600);
+    } catch (error) {
+      toast.error("Analysis failed");
+      setState("idle");
+    }
   };
+
+  // Use dynamic data from analysis or fallback
+  const distribution = analysis
+    ? [
+        { area: "Skills Match", value: analysis.scores.skill, color: "var(--color-primary)" },
+        { area: "Resume Quality", value: analysis.scores.resume, color: "var(--color-secondary)" },
+        { area: "ATS Compatible", value: analysis.scores.ats, color: "var(--color-warning)" },
+        { area: "Interview Ready", value: analysis.scores.interview, color: "var(--color-success)" },
+      ]
+    : [];
 
   return (
     <>
@@ -151,7 +165,7 @@ function ResumePage() {
           </motion.div>
         )}
 
-        {state === "done" && (
+        {state === "done" && analysis && (
           <motion.div
             key="done"
             initial={{ opacity: 0, y: 20 }}
@@ -159,10 +173,10 @@ function ResumePage() {
             className="space-y-6"
           >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <MetricCard label="Resume Score" value={scores.resume} icon={FileText} accent="primary" index={0} />
-              <MetricCard label="ATS Score" value={scores.ats} icon={ScanLine} accent="secondary" index={1} />
-              <MetricCard label="Skill Match" value={scores.skill} icon={Target} accent="warning" index={2} />
-              <MetricCard label="Career Readiness" value={computeCRI()} icon={Gauge} accent="success" index={3} />
+              <MetricCard label="Resume Score" value={analysis.scores.resume} icon={FileText} accent="primary" index={0} />
+              <MetricCard label="ATS Score" value={analysis.scores.ats} icon={ScanLine} accent="secondary" index={1} />
+              <MetricCard label="Skill Match" value={analysis.scores.skill} icon={Target} accent="warning" index={2} />
+              <MetricCard label="Career Readiness" value={Math.round(0.3 * analysis.scores.ats + 0.25 * analysis.scores.resume + 0.25 * analysis.scores.interview + 0.2 * analysis.scores.skill)} icon={Gauge} accent="success" index={3} />
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
